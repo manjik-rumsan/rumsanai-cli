@@ -3,6 +3,9 @@
 CLAUDE_DIR="$HOME/.claude"
 SETTINGS_FILE="$CLAUDE_DIR/settings.json"
 
+OPENCODE_DIR="$HOME/.config/opencode"
+OPENCODE_FILE="$OPENCODE_DIR/opencode.json"
+
 prompt_config() {
     echo
 
@@ -82,18 +85,97 @@ config_claude() {
     write_config
 }
 
+write_opencode_config() {
+
+mkdir -p "$OPENCODE_DIR"
+
+cat > "$OPENCODE_FILE" <<EOF
+{
+  "provider": {
+    "9router": {
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "$BASE_URL",
+        "apiKey": "$AUTH_TOKEN"
+      },
+      "models": {
+        "$MODEL": {
+          "name": "$MODEL",
+          "modalities": {
+            "input": [
+              "text",
+              "image"
+            ],
+            "output": [
+              "text"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "model": "9router/$MODEL",
+  "agent": {
+    "explorer": {
+      "description": "Fast explorer subagent for codebase exploration",
+      "mode": "subagent",
+      "model": "9router/$MODEL"
+    }
+  }
+}
+EOF
+
+echo
+echo "✓ OpenCode configured."
+}
+
+enable_opencode() {
+    prompt_config
+    write_opencode_config
+}
+
+disable_opencode() {
+
+if [[ -f "$OPENCODE_FILE" ]]; then
+    rm "$OPENCODE_FILE"
+    echo "✓ OpenCode configuration removed."
+else
+    echo "OpenCode is not configured."
+fi
+
+}
+
+config_opencode() {
+    if [[ -f "$OPENCODE_FILE" ]]; then
+        echo "Current configuration:"
+        cat "$OPENCODE_FILE"
+        echo
+    fi
+
+    prompt_config
+    write_opencode_config
+}
+
 interactive() {
 
 echo
 echo "Rumsan AI"
 echo
 echo "1) Claude"
-echo "2) OpenCode (coming soon)"
+echo "2) OpenCode"
 echo
 read -rp "Choose provider: " provider
 
 case "$provider" in
     1)
+        enable_fn=enable_claude
+        disable_fn=disable_claude
+        config_fn=config_claude
+        ;;
+    2)
+        enable_fn=enable_opencode
+        disable_fn=disable_opencode
+        config_fn=config_opencode
         ;;
     *)
         echo "Not implemented."
@@ -111,13 +193,13 @@ read -rp "Choose action: " action
 
 case "$action" in
     1)
-        enable_claude
+        "$enable_fn"
         ;;
     2)
-        disable_claude
+        "$disable_fn"
         ;;
     3)
-        config_claude
+        "$config_fn"
         ;;
     *)
         exit 1
@@ -150,6 +232,32 @@ case "$1" in
                 echo "rumsanai --claude enable"
                 echo "rumsanai --claude disable"
                 echo "rumsanai --claude config"
+                ;;
+        esac
+        ;;
+
+    --opencode)
+
+        case "$2" in
+            enable)
+                enable_opencode
+                ;;
+
+            disable)
+                disable_opencode
+                ;;
+
+            config)
+                config_opencode
+                ;;
+
+            *)
+                echo
+                echo "Usage:"
+                echo
+                echo "rumsanai --opencode enable"
+                echo "rumsanai --opencode disable"
+                echo "rumsanai --opencode config"
                 ;;
         esac
         ;;
