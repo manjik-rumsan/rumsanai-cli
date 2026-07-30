@@ -2,8 +2,10 @@
 
 set -e
 
+REPO_RAW="https://raw.githubusercontent.com/rumsan/rumsanai-cli/main"
+
 mkdir -p ~/.local/bin
-cp rumsanai ~/.local/bin/rumsanai
+curl -fsSL "$REPO_RAW/rumsanai" -o ~/.local/bin/rumsanai
 chmod +x ~/.local/bin/rumsanai
 
 echo "Installed to ~/.local/bin/rumsanai"

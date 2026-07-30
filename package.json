@@ -1,0 +1,19 @@
+{
+  "name": "@rumsan/ai",
+  "version": "0.1.0",
+  "description": "Rumsan AI CLI setup tool",
+  "bin": {
+    "rumsanai": "./rumsanai"
+  },
+  "files": [
+    "rumsanai"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rumsan/rumsanai-cli.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT"
+}
