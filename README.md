@@ -13,7 +13,7 @@ npx @rumsan/ai
 Via curl:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/rumsan/rumsanai-cli/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/manjik-rumsan/rumsanai-cli/main/install.sh | bash
 ```
 
 The curl installer places `rumsanai` in `~/.local/bin`. Make sure that directory is on your `PATH`.

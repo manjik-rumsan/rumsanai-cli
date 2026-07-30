@@ -19,8 +19,18 @@ prompt_config() {
         echo
     done
 
-    read -rp "ANTHROPIC_MODEL [rs]: " MODEL
-    MODEL="${MODEL:-rs}"
+    echo "ANTHROPIC_MODEL options:"
+    echo "  1) rs    (default)"
+    echo "  2) free"
+    read -rp "Choose [1]: " MODEL_CHOICE
+    case "$MODEL_CHOICE" in
+        2|free) MODEL="free" ;;
+        1|rs|"") MODEL="rs" ;;
+        *)
+            echo "Unknown option, defaulting to rs"
+            MODEL="rs"
+            ;;
+    esac
 }
 
 write_config() {
