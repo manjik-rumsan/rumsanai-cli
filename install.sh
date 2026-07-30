@@ -2,7 +2,7 @@
 
 set -e
 
-REPO_RAW="https://raw.githubusercontent.com/rumsan/rumsanai-cli/main"
+REPO_RAW="https://raw.githubusercontent.com/manjik-rumsan/rumsanai-cli/main"
 
 mkdir -p ~/.local/bin
 curl -fsSL "$REPO_RAW/rumsanai" -o ~/.local/bin/rumsanai
