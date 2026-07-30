@@ -1,0 +1,154 @@
+#!/usr/bin/env bash
+
+CLAUDE_DIR="$HOME/.claude"
+SETTINGS_FILE="$CLAUDE_DIR/settings.json"
+
+prompt_config() {
+    echo
+
+    DEFAULT_BASE_URL="https://ai.rumsan.net/v1"
+
+    read -rp "ANTHROPIC_BASE_URL [$DEFAULT_BASE_URL]: " BASE_URL
+    BASE_URL="${BASE_URL:-$DEFAULT_BASE_URL}"
+
+    read -rsp "ANTHROPIC_AUTH_TOKEN: " AUTH_TOKEN
+    echo
+
+    while [[ -z "$AUTH_TOKEN" ]]; do
+        read -rsp "ANTHROPIC_AUTH_TOKEN: " AUTH_TOKEN
+        echo
+    done
+
+    read -rp "ANTHROPIC_MODEL [rs]: " MODEL
+    MODEL="${MODEL:-rs}"
+}
+
+write_config() {
+
+mkdir -p "$CLAUDE_DIR"
+
+cat > "$SETTINGS_FILE" <<EOF
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "$BASE_URL",
+    "ANTHROPIC_AUTH_TOKEN": "$AUTH_TOKEN",
+    "ANTHROPIC_MODEL": "$MODEL",
+    "CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY": "1"
+  },
+  "model": "$MODEL",
+  "theme": "dark",
+  "hasCompletedOnboarding": true
+}
+EOF
+
+echo
+echo "✓ Claude configured."
+}
+
+enable_claude() {
+    prompt_config
+    write_config
+}
+
+disable_claude() {
+
+if [[ -f "$SETTINGS_FILE" ]]; then
+    rm "$SETTINGS_FILE"
+    echo "✓ Claude configuration removed."
+else
+    echo "Claude is not configured."
+fi
+
+}
+
+config_claude() {
+    if [[ -f "$SETTINGS_FILE" ]]; then
+        echo "Current configuration:"
+        cat "$SETTINGS_FILE"
+        echo
+    fi
+
+    prompt_config
+    write_config
+}
+
+interactive() {
+
+echo
+echo "Rumsan AI"
+echo
+echo "1) Claude"
+echo "2) OpenCode (coming soon)"
+echo
+read -rp "Choose provider: " provider
+
+case "$provider" in
+    1)
+        ;;
+    *)
+        echo "Not implemented."
+        exit 1
+        ;;
+esac
+
+echo
+echo "1) Enable"
+echo "2) Disable"
+echo "3) Config"
+echo
+
+read -rp "Choose action: " action
+
+case "$action" in
+    1)
+        enable_claude
+        ;;
+    2)
+        disable_claude
+        ;;
+    3)
+        config_claude
+        ;;
+    *)
+        exit 1
+        ;;
+esac
+
+}
+
+case "$1" in
+
+    --claude)
+
+        case "$2" in
+            enable)
+                enable_claude
+                ;;
+
+            disable)
+                disable_claude
+                ;;
+
+            config)
+                config_claude
+                ;;
+
+            *)
+                echo
+                echo "Usage:"
+                echo
+                echo "rumsanai --claude enable"
+                echo "rumsanai --claude disable"
+                echo "rumsanai --claude config"
+                ;;
+        esac
+        ;;
+
+    "")
+        interactive
+        ;;
+
+    *)
+        echo "Unknown command."
+        ;;
+esac
