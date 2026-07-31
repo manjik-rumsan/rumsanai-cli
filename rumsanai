@@ -156,6 +156,33 @@ config_opencode() {
     write_opencode_config
 }
 
+copilot_instructions() {
+
+DEFAULT_BASE_URL="https://ai.rumsan.net/v1"
+
+cat <<EOF
+
+GitHub Copilot has no direct config file for a custom base URL — it only
+talks to its own proprietary endpoints. Routing it through the Rumsan
+gateway (models: rs, free) requires MITM traffic interception via 9router,
+not a config write. rumsanai cannot automate this (it needs a trusted root
+CA and elevated privileges), but here's the manual flow:
+
+  1. Install 9router:      https://github.com/decolua/9router
+  2. Trust its root CA:    9router mitm install-cert
+  3. Start interception:   9router mitm start --tool copilot
+  4. In the 9router dashboard, map a Copilot model alias to your Rumsan
+     gateway model ("rs" or "free"), using:
+       Base URL:  $DEFAULT_BASE_URL
+       API key:   (your ANTHROPIC_AUTH_TOKEN)
+
+This installs a root CA into your system trust store and redirects DNS
+for api.individual.githubcopilot.com to a local MITM server running on
+port 443 — review 9router's own docs before proceeding.
+
+EOF
+}
+
 interactive() {
 
 echo
@@ -163,6 +190,7 @@ echo "Rumsan AI"
 echo
 echo "1) Claude"
 echo "2) OpenCode"
+echo "3) GitHub Copilot (manual setup instructions)"
 echo
 read -rp "Choose provider: " provider
 
@@ -176,6 +204,10 @@ case "$provider" in
         enable_fn=enable_opencode
         disable_fn=disable_opencode
         config_fn=config_opencode
+        ;;
+    3)
+        copilot_instructions
+        exit 0
         ;;
     *)
         echo "Not implemented."
@@ -260,6 +292,10 @@ case "$1" in
                 echo "rumsanai --opencode config"
                 ;;
         esac
+        ;;
+
+    --copilot)
+        copilot_instructions
         ;;
 
     "")
