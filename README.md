@@ -21,10 +21,24 @@ The curl installer places `rumsanai` in `~/.local/bin`. Make sure that directory
 ## Usage
 
 ```bash
-rumsanai                     # interactive menu
-rumsanai --claude enable     # write ~/.claude/settings.json with Rumsan gateway config
-rumsanai --claude disable    # remove ~/.claude/settings.json
-rumsanai --claude config     # show current config, then re-prompt and rewrite
+rumsanai                        # interactive menu
+rumsanai --claude enable        # write ~/.claude/settings.json with Rumsan gateway config
+rumsanai --claude disable       # remove ~/.claude/settings.json
+rumsanai --claude config        # show current config, then re-prompt and rewrite
+
+rumsanai --opencode enable      # write ~/.config/opencode/opencode.json
+rumsanai --opencode disable
+rumsanai --opencode config
+
+rumsanai --vscode-copilot enable   # add a "Rumsan AI" custom endpoint entry to
+                                    # VS Code's chatLanguageModels.json (Copilot
+                                    # Chat model picker), requires jq
+rumsanai --vscode-copilot disable  # remove only the "Rumsan AI" entry
+rumsanai --vscode-copilot config
+
+rumsanai --copilot              # print manual instructions for routing GitHub
+                                 # Copilot (CLI / other non-VS Code clients)
+                                 # through 9router's MITM proxy
 ```
 
 `enable` prompts for:

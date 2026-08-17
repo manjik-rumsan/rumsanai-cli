@@ -6,6 +6,14 @@ SETTINGS_FILE="$CLAUDE_DIR/settings.json"
 OPENCODE_DIR="$HOME/.config/opencode"
 OPENCODE_FILE="$OPENCODE_DIR/opencode.json"
 
+case "$(uname -s)" in
+    Darwin) VSCODE_DIR="$HOME/Library/Application Support/Code/User" ;;
+    Linux)  VSCODE_DIR="$HOME/.config/Code/User" ;;
+    *)      VSCODE_DIR="" ;;
+esac
+VSCODE_FILE="$VSCODE_DIR/chatLanguageModels.json"
+VSCODE_ENTRY_NAME="Rumsan AI"
+
 prompt_config() {
     echo
 
@@ -183,6 +191,104 @@ port 443 — review 9router's own docs before proceeding.
 EOF
 }
 
+vscode_copilot_manual_instructions() {
+    echo
+    echo "jq is required to safely edit chatLanguageModels.json without"
+    echo "clobbering other configured providers. Install it (brew install jq /"
+    echo "apt install jq) and re-run, or add this entry by hand via VS Code:"
+    echo "Command Palette -> \"Chat: Manage Language Models\" -> Custom Endpoint"
+    echo "-> Chat Completions, then point it at:"
+    echo "  Base URL: $BASE_URL"
+    echo "  API key:  (your ANTHROPIC_AUTH_TOKEN)"
+    echo "  Model id: $MODEL"
+}
+
+write_vscode_copilot_config() {
+
+    if [[ -z "$VSCODE_DIR" ]]; then
+        echo "Automatic VS Code config isn't supported on this OS."
+        echo "Base URL: $BASE_URL   API key: (your ANTHROPIC_AUTH_TOKEN)   Model id: $MODEL"
+        return 1
+    fi
+
+    if ! command -v jq >/dev/null 2>&1; then
+        vscode_copilot_manual_instructions
+        return 1
+    fi
+
+    mkdir -p "$VSCODE_DIR"
+
+    if [[ -f "$VSCODE_FILE" ]]; then
+        EXISTING=$(cat "$VSCODE_FILE")
+    else
+        EXISTING="[]"
+    fi
+
+    NEW_ENTRY=$(jq -n \
+        --arg name "$VSCODE_ENTRY_NAME" \
+        --arg key "$AUTH_TOKEN" \
+        --arg url "$BASE_URL" \
+        --arg model "$MODEL" \
+        '{
+            name: $name,
+            vendor: "customendpoint",
+            apiKey: $key,
+            apiType: "chat-completions",
+            models: [{
+                id: $model,
+                name: ("Rumsan LLM Stack (" + $model + ")"),
+                url: $url,
+                toolCalling: true,
+                vision: true,
+                maxInputTokens: 128000,
+                maxOutputTokens: 16000
+            }]
+        }')
+
+    echo "$EXISTING" | jq --argjson entry "$NEW_ENTRY" \
+        '[.[] | select(.name != $entry.name)] + [$entry]' > "$VSCODE_FILE"
+
+    echo
+    echo "✓ VS Code Copilot Chat configured ($VSCODE_FILE)."
+    echo "  Note: the API key is stored in plaintext in that file."
+    echo "  Reload VS Code, then pick \"Rumsan LLM Stack\" in the Copilot Chat model picker."
+}
+
+enable_vscode_copilot() {
+    prompt_config
+    write_vscode_copilot_config
+}
+
+disable_vscode_copilot() {
+
+    if [[ ! -f "$VSCODE_FILE" ]]; then
+        echo "VS Code Copilot is not configured."
+        return
+    fi
+
+    if ! command -v jq >/dev/null 2>&1; then
+        echo "jq is required to safely remove the entry."
+        echo "Edit $VSCODE_FILE by hand and remove the \"$VSCODE_ENTRY_NAME\" entry."
+        return 1
+    fi
+
+    jq --arg name "$VSCODE_ENTRY_NAME" '[.[] | select(.name != $name)]' \
+        "$VSCODE_FILE" > "$VSCODE_FILE.tmp" && mv "$VSCODE_FILE.tmp" "$VSCODE_FILE"
+
+    echo "✓ Rumsan AI entry removed from $VSCODE_FILE."
+}
+
+config_vscode_copilot() {
+    if [[ -f "$VSCODE_FILE" ]]; then
+        echo "Current configuration:"
+        cat "$VSCODE_FILE"
+        echo
+    fi
+
+    prompt_config
+    write_vscode_copilot_config
+}
+
 interactive() {
 
 echo
@@ -190,7 +296,8 @@ echo "Rumsan AI"
 echo
 echo "1) Claude"
 echo "2) OpenCode"
-echo "3) GitHub Copilot (manual setup instructions)"
+echo "3) VS Code Copilot Chat"
+echo "4) GitHub Copilot (CLI/other tools - manual setup instructions)"
 echo
 read -rp "Choose provider: " provider
 
@@ -206,6 +313,11 @@ case "$provider" in
         config_fn=config_opencode
         ;;
     3)
+        enable_fn=enable_vscode_copilot
+        disable_fn=disable_vscode_copilot
+        config_fn=config_vscode_copilot
+        ;;
+    4)
         copilot_instructions
         exit 0
         ;;
@@ -290,6 +402,32 @@ case "$1" in
                 echo "rumsanai --opencode enable"
                 echo "rumsanai --opencode disable"
                 echo "rumsanai --opencode config"
+                ;;
+        esac
+        ;;
+
+    --vscode-copilot)
+
+        case "$2" in
+            enable)
+                enable_vscode_copilot
+                ;;
+
+            disable)
+                disable_vscode_copilot
+                ;;
+
+            config)
+                config_vscode_copilot
+                ;;
+
+            *)
+                echo
+                echo "Usage:"
+                echo
+                echo "rumsanai --vscode-copilot enable"
+                echo "rumsanai --vscode-copilot disable"
+                echo "rumsanai --vscode-copilot config"
                 ;;
         esac
         ;;
